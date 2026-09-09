@@ -1,0 +1,9 @@
+services:
+  simulacao-tesla:
+    build: .
+    container_name: tesla_adsb_app
+    volumes:
+      - .:/app
+    environment:
+      - PYTHONUNBUFFERED=1
+    command: python main.py
