@@ -1,10 +1,12 @@
 import random
 import time
+from typing import Any
+
 
 class CanalRadio:
     def __init__(self,
                  prob_perda: float = 0.1,
-                 latencia_base: float = 0.1,
+                 latencia_base: float = 0.05,
                  variacao_max: float = 0.005):
 
         self.prob_perda = prob_perda
@@ -16,18 +18,30 @@ class CanalRadio:
             "intervalos_perdidos": []
         }
 
-    def transmitir(self, pacote: dict) -> dict | None:
+    def transmitir(self, pacote: Any) -> tuple[Any | None, float]:
+
         self.estatisticas["enviados"] += 1
+        tempo_envio = time.time()
 
         if random.random() < self.prob_perda:
             self.estatisticas["perdidos"] += 1
 
-            if pacote and "intervalo" in pacote:
-                self.estatisticas["intervalos_perdidos"].append(pacote["intervalo"])
+            idx_intervalo = None
+            if hasattr(pacote, "intervalo_i"):
+                idx_intervalo = pacote.intervalo_i
+            elif isinstance(pacote, dict) and "intervalo" in pacote:
+                idx_intervalo = pacote["intervalo"]
 
-            return None
+            if idx_intervalo is not None:
+                self.estatisticas["intervalos_perdidos"].append(idx_intervalo)
 
+            return None, tempo_envio
+
+        # Simulação de Latência
         variacao = random.uniform(-self.variacao_max, self.variacao_max)
-        time.sleep(self.latencia_base + variacao)
+        atraso_total = max(0.0, self.latencia_base + variacao)
 
-        return pacote
+        time.sleep(atraso_total)
+        tempo_recepcao = time.time()
+
+        return pacote, tempo_recepcao

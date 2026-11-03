@@ -3,6 +3,7 @@ import os
 
 def gerar_cadeia(n_intervalos: int) -> list[bytes]:
 
+    # Semente secreta inicial (corresponde ao K_N no final da cadeia)
     semente = os.urandom(32)
     cadeia = [semente]
 
@@ -12,13 +13,22 @@ def gerar_cadeia(n_intervalos: int) -> list[bytes]:
 
     return list(reversed(cadeia))
 
-def verificar_chave(chave_recebida: bytes, chave_anterior: bytes, max_saltos: int = 10) -> bool:
-    # aplica o hash repetidamente para validar  as chaves mesmo após perdas no canal.
-    temp = chave_recebida
 
-    for _ in range(max_saltos):
+def derivar_chave_mac(k_i: bytes) -> bytes:
+
+    return hashlib.sha256(b"MAC_KEY_SALT" + k_i).digest()
+
+
+def verificar_chave(chave_divulgada: bytes, idx_divulgada: int,
+                    chave_confiavel: bytes, idx_confiavel: int) -> bool:
+
+    if idx_divulgada <= idx_confiavel:
+        return False
+
+    saltos = idx_divulgada - idx_confiavel
+    temp = chave_divulgada
+
+    for _ in range(saltos):
         temp = hashlib.sha256(temp).digest()
-        if temp == chave_anterior:
-            return True
 
-    return False
+    return temp == chave_confiavel
